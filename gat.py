@@ -2,7 +2,7 @@ import torch
 
 class GAT():
 
-     # Implementation of the GAT paper (Veličković et al., 2018).
+     # Implementation of a single GAT layer paper (Veličković et al., 2018).
 
     def __init__(self, in_dim, out_dim, num_heads, alpha=0.2, in_drop=0.6, coef_drop=0.6, concat = True, skip = True, generator=None):
 
@@ -30,15 +30,21 @@ class GAT():
 
         self.generator=generator
 
-    def forward(self, H, A): 
+    def forward(self, H, A, mode_train = True): 
+
+        # Forward pass: concatenation or averaging of aggregated features from all heads
 
         N = H.shape[0]
         A_loop = A.clone()
         A_loop[torch.arange(N), torch.arange(N)] = 1
 
         # Dropout on input
-        H_dropout_mask = (torch.rand(H.shape, generator=self.generator) < (1.0-self.in_drop)) / (1.0-self.in_drop)
-        H_dropped = H * H_dropout_mask
+        H_dropout_mask = None
+        if mode_train:
+            H_dropout_mask = (torch.rand(H.shape, generator=self.generator) < (1.0-self.in_drop)) / (1.0-self.in_drop)
+            H_dropped = H * H_dropout_mask
+        else:
+            H_dropped = H
 
         h = H_dropped @ self.W
 
@@ -66,8 +72,13 @@ class GAT():
         att_normalized = counts * counts_sum_inv
 
         # Dropout on normalized attention coefficients
-        att_dropout_mask = (torch.rand(att_normalized.shape, generator=self.generator) < (1.0-self.coef_drop)) / (1.0-self.coef_drop)
-        att_normalized_dropped = att_normalized * att_dropout_mask 
+        att_normalized_dropped = None
+        att_dropout_mask = None
+        if mode_train:
+            att_dropout_mask = (torch.rand(att_normalized.shape, generator=self.generator) < (1.0-self.coef_drop)) / (1.0-self.coef_drop)
+            att_normalized_dropped = att_normalized * att_dropout_mask 
+        else:
+            att_normalized_dropped = att_normalized
 
         # Feature aggregation
         g = torch.einsum('njh, jhf -> nhf', att_normalized_dropped, h_reshaped)
@@ -93,7 +104,7 @@ class GAT():
         else:
             out = g_skip_bias.mean(dim = 1)
 
-        self.cache = (self.W, g_skip_bias, H, h_reshaped, att_normalized_dropped, att_dropout_mask, counts, counts_sum, counts_sum_inv, e_max, eInf, A_loop, concat, e, h, H_dropped, H_dropout_mask)
+        self.cache = (self.W, g_skip_bias, H, h_reshaped, att_normalized_dropped, mode_train, att_dropout_mask, counts, counts_sum, counts_sum_inv, e_max, eInf, A_loop, concat, e, h, H_dropped, H_dropout_mask)
 
         return out
 
@@ -102,7 +113,7 @@ class GAT():
 
         # Backward pass to compute the gradient w.r.t. H, W, b, attention, skip_proj
         
-        (W, g_skip_bias, H, h_reshaped, att_normalized_dropped, att_dropout_mask, counts, counts_sum, counts_sum_inv, e_max, eInf, A_loop, concat, e, h, H_dropped, H_dropout_mask) = self.cache
+        (W, g_skip_bias, H, h_reshaped, att_normalized_dropped, mode_train, att_dropout_mask, counts, counts_sum, counts_sum_inv, e_max, eInf, A_loop, concat, e, h, H_dropped, H_dropout_mask) = self.cache
 
         out_dim = W.shape[1] // self.num_heads
 
@@ -135,7 +146,12 @@ class GAT():
         dh_reshaped1 = torch.einsum('nhf,njh->jhf', dg, att_normalized_dropped)
 
         # Gradient through attention layer
-        datt_normalized = datt_normalized_dropped * att_dropout_mask
+        datt_normalized = None
+        if mode_train:
+            datt_normalized = datt_normalized_dropped * att_dropout_mask
+        else:
+            datt_normalized = datt_normalized_dropped
+
         dcounts_sum_inv = torch.sum(datt_normalized * counts, dim = 1, keepdim = True)
         dcounts_sum = torch.sum(dcounts_sum_inv * -(counts_sum**-2) , dim = 1, keepdim = True)
         dcounts1 = counts_sum_inv * datt_normalized
@@ -171,7 +187,11 @@ class GAT():
         dh = dh_reshaped.view(h.shape)
         dH_dropped = dh @ self.W.T
         dW = H_dropped.T @ dh
-        dH2 = dH_dropped * H_dropout_mask
+        dH2 = None
+        if mode_train:
+            dH2 = dH_dropped * H_dropout_mask
+        else:
+            dH2 = dH_dropped
 
         dH = dH2
         if dH1 is not None:

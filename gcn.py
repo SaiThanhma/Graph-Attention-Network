@@ -4,11 +4,15 @@ class GCN():
 
     # Implementation of a Graph Convolutional Layer
 
-    def __init__(self, in_dim, out_dim, alpha=0.0):
+    def __init__(self, in_dim, out_dim, alpha=0.0, generator=None):
+
+
+        # self.W1 for neighborhood aggregation
+        # self.W2 for transforming hidden vector of self
 
         # Kaiming initialization from a normal distribution
-        self.W1 = torch.randn(in_dim, out_dim) * (2.0 / (in_dim * (1 + alpha**2)))**0.5
-        self.W2 = torch.randn(in_dim, out_dim) * (2.0 / (in_dim * (1 + alpha**2)))**0.5
+        self.W1 = torch.randn(in_dim, out_dim, generator=generator) * (2.0 / (in_dim * (1 + alpha**2)))**0.5
+        self.W2 = torch.randn(in_dim, out_dim, generator=generator) * (2.0 / (in_dim * (1 + alpha**2)))**0.5
         self.b = torch.zeros(out_dim)
         self.alpha = alpha
         self.cache = ()
@@ -49,6 +53,9 @@ class GCN():
         return dH, dW1, dW2, db
     
     def _getAnorm(self, A):
+
+        # Symmetric normalization of the adjacency matrix
+
         N = A.shape[0]
 
         D_inv_sqrt = torch.zeros_like(A)

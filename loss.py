@@ -1,11 +1,19 @@
 import torch
 
 class CrossEntropyLoss():
+
+    # Implementation of Cross Entropy Loss
+
     def __init__(self):
         self.cache = ()
 
     def forward(self, y_pred, y_truth):
+
+        # Assuming y_pred is of (N,C) and y_truth (N)
+
         N = y_pred.shape[0]
+        
+        # Numerical stability by subtracting the max
         logits_max = torch.max(y_pred, dim=1, keepdim=True).values
         logits_norm = y_pred - logits_max
         counts = torch.exp(logits_norm)
@@ -45,7 +53,7 @@ class CrossEntropyLoss():
 
         return dout * dy_pred
 
-        # Backprop w.r.t y_pred be simplified:
+        # Backprop w.r.t y_pred can be simplified:
         # N = y_pred.shape[0]
         # dy_pred = probs.clone()
         # dy_pred[torch.arange(N), y_truth] -= 1

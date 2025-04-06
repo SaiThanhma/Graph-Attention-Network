@@ -1,6 +1,6 @@
 # Graph Attention Network
 
-PyTorch implementation of a Graph Attentional layer from the paper: [Veličković et al., "Graph Attention Networks", 2018](https://arxiv.org/abs/1710.10903)
+PyTorch implementation of a Graph Attentional layer from the paper: [Graph Attention Networks](https://arxiv.org/abs/1710.10903) (Veličković et al., 2018)
 
 This implementation uses low-level PyTorch tensor operations (without `torch.nn`) and includes manual backpropagation through the GAT layer without PyTorch autograd.
 This repository was created for educational purposes to understand how:

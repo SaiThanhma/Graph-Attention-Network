@@ -2,7 +2,7 @@ import torch
 
 class GAT():
 
-     # Implementation of a single GAT layer paper (Veličković et al., 2018).
+     # Implementation of a single GAT layer based on the  Graph Attention Network paper (Veličković et al., 2018).
 
     def __init__(self, in_dim, out_dim, num_heads, alpha=0.2, in_drop=0.6, coef_drop=0.6, concat = True, skip = True, generator=None):
 

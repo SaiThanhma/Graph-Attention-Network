@@ -1,4 +1,4 @@
-# Graph Attentional layer
+# Graph Attention Network
 
 PyTorch implementation of a Graph Attentional layer from the paper: [Veličković et al., "Graph Attention Networks", 2018](https://arxiv.org/abs/1710.10903)
 

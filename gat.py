@@ -22,6 +22,7 @@ class GAT():
         self.skip = skip
         self.skip_proj = None
 
+        # Adding projection for skip connection if in_dim != out_dim
         if self.skip and in_dim != out_dim:
             limit_skip_proj = (6 / (in_dim + out_dim))**0.5
             self.skip_proj = (2*limit_skip_proj) * torch.rand(in_dim, out_dim, generator=generator) - limit_skip_proj
@@ -83,7 +84,7 @@ class GAT():
         # Feature aggregation
         g = torch.einsum('njh, jhf -> nhf', att_normalized_dropped, h_reshaped)
 
-        # Residual connection with projection for if in_dim != out_dim
+        # Residual connection with linear transformation if in_dim != out_dim
         g_skip = g.clone()
         if self.skip:
             if self.skip_proj is None:
@@ -175,19 +176,18 @@ class GAT():
         
         # Grad w.r.t. concat(hi, hj)
         dconcat = de.unsqueeze(-1) * self.attention
-
         dhi = dconcat[:,:,:,:out_dim]
         dhj = dconcat[:,:,:,out_dim:]
 
+        # Grad w.r.t. input features H
         dh_reshaped2 = torch.sum(dhi, dim=1)
         dh_reshaped3 = torch.sum(dhj, dim=0)
         dh_reshaped = dh_reshaped3 + dh_reshaped1 + dh_reshaped2 # Could be numerically inaccurate
-
-        # Grad w.r.t. input features H
         dh = dh_reshaped.view(h.shape)
         dH_dropped = dh @ self.W.T
         dW = H_dropped.T @ dh
         dH2 = None
+
         if mode_train:
             dH2 = dH_dropped * H_dropout_mask
         else:

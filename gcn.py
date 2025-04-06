@@ -7,8 +7,8 @@ class GCN():
     def __init__(self, in_dim, out_dim, alpha=0.0, generator=None):
 
 
-        # self.W1 for neighborhood aggregation
-        # self.W2 for transforming hidden vector of self
+        # self.W1: neighborhood aggregation
+        # self.W2: transforming hidden vector of self
 
         # Kaiming initialization from a normal distribution
         self.W1 = torch.randn(in_dim, out_dim, generator=generator) * (2.0 / (in_dim * (1 + alpha**2)))**0.5

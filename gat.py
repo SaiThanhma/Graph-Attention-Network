@@ -2,7 +2,7 @@ import torch
 
 class GAT():
 
-     # Implementation of a single GAT layer based on the  Graph Attention Network paper (Veličković et al., 2018).
+     # Implementation of a Graph Attentional layer based on the Graph Attention Network paper (Veličković et al., 2018).
 
     def __init__(self, in_dim, out_dim, num_heads, alpha=0.2, in_drop=0.6, coef_drop=0.6, concat = True, skip = True, generator=None):
 
@@ -181,7 +181,7 @@ class GAT():
 
         dh_reshaped2 = torch.sum(dhi, dim=1)
         dh_reshaped3 = torch.sum(dhj, dim=0)
-        dh_reshaped = dh_reshaped3 + dh_reshaped1 + dh_reshaped2 # Could be to numerically inaccurate
+        dh_reshaped = dh_reshaped3 + dh_reshaped1 + dh_reshaped2 # Could be numerically inaccurate
 
         # Grad w.r.t. input features H
         dh = dh_reshaped.view(h.shape)
